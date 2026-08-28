@@ -73,6 +73,10 @@ def open_trade(pair, price, trade_size=50):
 
     balance -= trade_size
 
+    account["balance"] = balance
+    account["position"] = position
+    save_account(account)
+
     print("\n🟢 OPEN TRADE")
     print(pair)
     print("Entry:", price)
