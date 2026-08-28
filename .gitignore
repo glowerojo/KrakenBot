@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Local trading/account state
+account.json
+
+# Local trade history
+trades.csv
+
+# Backup files
+*_backup.py
+*_backup.csv
+*_before_*.py
+*_before_*.json
+
+# OS files
+.DS_Store
+
+# Secrets / environment variables
+.env
+
+# Backtest output data
+backtest_trades.csv
+backtest_trades_old.csv
