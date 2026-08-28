@@ -60,6 +60,10 @@ def open_trade(pair, price, trade_size=50):
         print("Position already open")
         return
 
+    if trade_size <= 0:
+        print("Invalid trade size")
+        return
+
     if not record_trade():
         return
 
