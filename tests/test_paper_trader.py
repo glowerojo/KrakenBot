@@ -126,3 +126,37 @@ def test_insufficient_balance_blocks_trade(tmp_path, monkeypatch):
 
     assert final_account["balance"] == 25.00
     assert final_account["position"] is None
+
+
+def test_duplicate_position_is_blocked(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    account = {
+        "balance": 100.00,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "daily_loss": 0.00,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import paper_trader
+    importlib.reload(paper_trader)
+
+    paper_trader.open_trade("ETHUSD", 2500.00, trade_size=50)
+
+    first_position = paper_trader.position.copy()
+
+    paper_trader.open_trade("ETHUSD", 2600.00, trade_size=50)
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["balance"] == 50.00
+    assert final_account["position"] == first_position
+    assert final_account["position"]["entry"] == 2500.00
