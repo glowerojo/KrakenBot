@@ -63,6 +63,10 @@ def open_trade(pair, price, trade_size=50):
     if not record_trade():
         return
 
+    if balance < trade_size:
+        print("Insufficient balance")
+        return
+
     position = {
         "pair": pair,
         "entry": price,
