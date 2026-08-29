@@ -148,3 +148,40 @@ def test_daily_stats_reset_on_new_day(tmp_path, monkeypatch):
     assert saved_account["trades_today"] == 0
     assert saved_account["daily_loss"] == 0
     assert saved_account["last_reset"] == today
+
+
+def test_can_trade_allows_valid_trade(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    from datetime import datetime, timedelta
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 2,
+        "wins": 2,
+        "losses": 0,
+        "total_profit": 2.00,
+        "position": None,
+        "trades_today": 2,
+        "daily_loss": 1.00,
+        "last_reset": today,
+        "last_trade_time": (datetime.now() - timedelta(minutes=31)).isoformat(),
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    allowed = risk_manager.can_trade()
+
+    assert allowed is True
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["trades_today"] == 2
+    assert final_account["daily_loss"] == 1.00
