@@ -65,3 +65,46 @@ def test_daily_loss_limit_blocks_trade(tmp_path, monkeypatch):
     assert allowed is False
     assert final_account["daily_loss"] == 5.00
     assert final_account["trades_today"] == 5
+
+
+def test_cooldown_blocks_recent_trade_and_allows_expired_cooldown(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    from datetime import datetime, timedelta
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    recent_account = {
+        "balance": 100.00,
+        "trades": 1,
+        "wins": 1,
+        "losses": 0,
+        "total_profit": 1.00,
+        "position": None,
+        "trades_today": 1,
+        "daily_loss": 0.00,
+        "last_reset": today,
+        "last_trade_time": (datetime.now() - timedelta(minutes=10)).isoformat(),
+    }
+
+    account_path.write_text(json.dumps(recent_account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    blocked = risk_manager.can_trade()
+
+    assert blocked is False
+
+    expired_account = {
+        **recent_account,
+        "last_trade_time": (datetime.now() - timedelta(minutes=31)).isoformat(),
+    }
+
+    account_path.write_text(json.dumps(expired_account))
+
+    allowed = risk_manager.can_trade()
+
+    assert allowed is True
