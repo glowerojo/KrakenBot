@@ -223,3 +223,36 @@ def test_account_state_persists_after_close(tmp_path, monkeypatch):
     assert saved_account["losses"] == 0
     assert saved_account["total_profit"] == 1.00
     assert saved_account["position"] is None
+
+
+def test_check_trade_without_position_does_nothing(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    account = {
+        "balance": 100.00,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "daily_loss": 0.00,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import paper_trader
+    importlib.reload(paper_trader)
+
+    paper_trader.check_trade(2500.00)
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["balance"] == 100.00
+    assert final_account["trades"] == 0
+    assert final_account["wins"] == 0
+    assert final_account["losses"] == 0
+    assert final_account["total_profit"] == 0.00
+    assert final_account["position"] is None
