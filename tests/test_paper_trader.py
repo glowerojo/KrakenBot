@@ -287,3 +287,38 @@ def test_risk_manager_rejection_blocks_trade(tmp_path, monkeypatch):
 
     assert final_account["balance"] == 100.00
     assert final_account["position"] is None
+
+
+def test_losing_trade_updates_account_state(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    account = {
+        "balance": 100.00,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "daily_loss": 0.00,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import paper_trader
+    importlib.reload(paper_trader)
+
+    paper_trader.open_trade("ETHUSD", 2500.00, trade_size=50)
+    paper_trader.check_trade(2475.00)
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["balance"] == 99.50
+    assert final_account["trades"] == 1
+    assert final_account["wins"] == 0
+    assert final_account["losses"] == 1
+    assert final_account["total_profit"] == -0.50
+    assert final_account["daily_loss"] == 0.50
+    assert final_account["position"] is None
