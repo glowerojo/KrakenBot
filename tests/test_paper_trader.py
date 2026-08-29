@@ -256,3 +256,34 @@ def test_check_trade_without_position_does_nothing(tmp_path, monkeypatch):
     assert final_account["losses"] == 0
     assert final_account["total_profit"] == 0.00
     assert final_account["position"] is None
+
+
+def test_risk_manager_rejection_blocks_trade(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    account = {
+        "balance": 100.00,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "daily_loss": 0.00,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import paper_trader
+    importlib.reload(paper_trader)
+
+    monkeypatch.setattr(paper_trader, "record_trade", lambda: False)
+
+    paper_trader.open_trade("ETHUSD", 2500.00, trade_size=50)
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["balance"] == 100.00
+    assert final_account["position"] is None
