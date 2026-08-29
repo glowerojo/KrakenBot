@@ -108,3 +108,43 @@ def test_cooldown_blocks_recent_trade_and_allows_expired_cooldown(tmp_path, monk
     allowed = risk_manager.can_trade()
 
     assert allowed is True
+
+
+def test_daily_stats_reset_on_new_day(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    from datetime import datetime, timedelta
+
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 95.00,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "total_profit": -5.00,
+        "position": None,
+        "trades_today": 5,
+        "daily_loss": 5.00,
+        "last_reset": yesterday,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    reset_account = risk_manager.reset_daily_stats(account)
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    saved_account = json.loads(account_path.read_text())
+
+    assert reset_account["trades_today"] == 0
+    assert reset_account["daily_loss"] == 0
+    assert reset_account["last_reset"] == today
+    assert saved_account["trades_today"] == 0
+    assert saved_account["daily_loss"] == 0
+    assert saved_account["last_reset"] == today
