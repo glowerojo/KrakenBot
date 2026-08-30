@@ -185,3 +185,37 @@ def test_can_trade_allows_valid_trade(tmp_path, monkeypatch):
 
     assert final_account["trades_today"] == 2
     assert final_account["daily_loss"] == 1.00
+
+
+def test_record_trade_updates_trade_count_and_timestamp(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    account = {
+        "balance": 100.00,
+        "trades": 2,
+        "wins": 2,
+        "losses": 0,
+        "total_profit": 2.00,
+        "position": None,
+        "trades_today": 2,
+        "daily_loss": 0.00,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+
+    final_account = json.loads(account_path.read_text())
+
+    assert recorded is True
+    assert final_account["trades_today"] == 3
+    assert final_account["balance"] == 100.00
+    assert final_account["daily_loss"] == 0.00
+    assert final_account["last_trade_time"]
+
+
