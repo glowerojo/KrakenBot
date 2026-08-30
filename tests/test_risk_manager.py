@@ -298,3 +298,40 @@ def test_new_day_resets_daily_limits_but_preserves_active_cooldown(tmp_path, mon
     assert final_account["last_trade_time"] == recent_trade
 
 
+
+
+def test_can_trade_allows_account_with_no_previous_trade(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "trades_today": 0,
+        "daily_loss": 0.00,
+        "last_reset": today,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    allowed = risk_manager.can_trade()
+
+    assert allowed is True
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["trades_today"] == 0
+    assert final_account["daily_loss"] == 0.00
+    assert "last_trade_time" not in final_account
+
+
