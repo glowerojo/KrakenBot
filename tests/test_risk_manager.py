@@ -335,3 +335,42 @@ def test_can_trade_allows_account_with_no_previous_trade(tmp_path, monkeypatch):
     assert "last_trade_time" not in final_account
 
 
+
+
+def test_daily_loss_just_below_limit_allows_trade(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 95.01,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "total_profit": -4.99,
+        "position": None,
+        "trades_today": 4,
+        "daily_loss": 4.99,
+        "last_reset": today,
+        "last_trade_time": (
+            datetime.now() - timedelta(minutes=31)
+        ).isoformat(),
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    allowed = risk_manager.can_trade()
+
+    assert allowed is True
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["daily_loss"] == 4.99
+    assert final_account["trades_today"] == 4
+
+
