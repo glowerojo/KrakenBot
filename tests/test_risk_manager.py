@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 
 def test_daily_trade_limit_blocks_sixth_trade(tmp_path, monkeypatch):
@@ -216,6 +217,44 @@ def test_record_trade_updates_trade_count_and_timestamp(tmp_path, monkeypatch):
     assert final_account["trades_today"] == 3
     assert final_account["balance"] == 100.00
     assert final_account["daily_loss"] == 0.00
+    assert final_account["last_trade_time"]
+
+
+
+
+def test_recorded_trade_starts_cooldown(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    account = {
+        "balance": 100.00,
+        "trades": 2,
+        "wins": 2,
+        "losses": 0,
+        "total_profit": 2.00,
+        "position": None,
+        "trades_today": 2,
+        "daily_loss": 0.00,
+        "last_reset": datetime.now().strftime("%Y-%m-%d"),
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+
+    assert recorded is True
+
+    blocked = risk_manager.can_trade()
+
+    assert blocked is False
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["trades_today"] == 3
     assert final_account["last_trade_time"]
 
 
