@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def test_daily_trade_limit_blocks_sixth_trade(tmp_path, monkeypatch):
@@ -37,7 +37,7 @@ def test_daily_loss_limit_blocks_trade(tmp_path, monkeypatch):
 
     account_path = tmp_path / "account.json"
 
-    from datetime import datetime
+    from datetime import datetime, timedelta
 
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -72,7 +72,7 @@ def test_cooldown_blocks_recent_trade_and_allows_expired_cooldown(tmp_path, monk
 
     account_path = tmp_path / "account.json"
 
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timedelta
 
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -115,7 +115,7 @@ def test_daily_stats_reset_on_new_day(tmp_path, monkeypatch):
 
     account_path = tmp_path / "account.json"
 
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timedelta
 
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -155,7 +155,7 @@ def test_can_trade_allows_valid_trade(tmp_path, monkeypatch):
 
     account_path = tmp_path / "account.json"
 
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timedelta
 
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -256,5 +256,45 @@ def test_recorded_trade_starts_cooldown(tmp_path, monkeypatch):
 
     assert final_account["trades_today"] == 3
     assert final_account["last_trade_time"]
+
+
+
+
+def test_new_day_resets_daily_limits_but_preserves_active_cooldown(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    recent_trade = (datetime.now() - timedelta(minutes=10)).isoformat()
+
+    account = {
+        "balance": 95.00,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "total_profit": -5.00,
+        "position": None,
+        "trades_today": 5,
+        "daily_loss": 5.00,
+        "last_reset": yesterday,
+        "last_trade_time": recent_trade,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    allowed = risk_manager.can_trade()
+
+    final_account = json.loads(account_path.read_text())
+
+    assert allowed is False
+    assert final_account["trades_today"] == 0
+    assert final_account["daily_loss"] == 0
+    assert final_account["last_reset"] == datetime.now().strftime("%Y-%m-%d")
+    assert final_account["last_trade_time"] == recent_trade
 
 
