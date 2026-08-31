@@ -620,3 +620,52 @@ def test_record_trade_preserves_last_reset(tmp_path, monkeypatch):
     assert final_account["last_trade_time"] != previous_trade_time
 
 
+
+
+def test_record_trade_preserves_position(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    previous_trade_time = (
+        datetime.now() - timedelta(minutes=31)
+    ).isoformat()
+
+    position = {
+        "pair": "ETHUSD",
+        "side": "buy",
+        "entry": 1900.00,
+        "amount": 0.01,
+    }
+
+    account = {
+        "balance": 100.00,
+        "trades": 3,
+        "wins": 3,
+        "losses": 0,
+        "total_profit": 3.00,
+        "position": position,
+        "trades_today": 3,
+        "daily_loss": 0.00,
+        "last_reset": today,
+        "last_trade_time": previous_trade_time,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+
+    assert recorded is True
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["position"] == position
+    assert final_account["trades_today"] == 4
+    assert final_account["last_trade_time"] != previous_trade_time
+
+
