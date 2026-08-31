@@ -711,3 +711,45 @@ def test_record_trade_preserves_daily_loss(tmp_path, monkeypatch):
     assert final_account["last_trade_time"] != previous_trade_time
 
 
+
+
+def test_record_trade_preserves_balance(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    previous_trade_time = (
+        datetime.now() - timedelta(minutes=31)
+    ).isoformat()
+
+    account = {
+        "balance": 123.45,
+        "trades": 8,
+        "wins": 7,
+        "losses": 1,
+        "total_profit": 23.45,
+        "position": None,
+        "trades_today": 3,
+        "daily_loss": 1.25,
+        "last_reset": today,
+        "last_trade_time": previous_trade_time,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+
+    assert recorded is True
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["balance"] == 123.45
+    assert final_account["trades_today"] == 4
+    assert final_account["last_trade_time"] != previous_trade_time
+
+
