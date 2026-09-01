@@ -929,3 +929,46 @@ def test_record_trade_blocks_at_limit_without_changing_position(
     assert final_account["trades_today"] == 5
 
 
+
+
+def test_record_trade_blocks_at_limit_without_changing_daily_loss(
+    tmp_path, monkeypatch
+):
+
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    previous_trade_time = (
+        datetime.now() - timedelta(minutes=31)
+    ).isoformat()
+
+    account = {
+        "balance": 140.00,
+        "trades": 12,
+        "wins": 9,
+        "losses": 3,
+        "total_profit": 40.00,
+        "position": None,
+        "trades_today": 5,
+        "daily_loss": 4.75,
+        "last_reset": today,
+        "last_trade_time": previous_trade_time,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+
+    assert recorded is False
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["daily_loss"] == 4.75
+    assert final_account["trades_today"] == 5
+
+
