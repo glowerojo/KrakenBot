@@ -73,7 +73,7 @@ def can_trade():
 
 def record_trade():
 
-    account = load_account()
+    account = reset_daily_stats(load_account())
 
     current_trades = account.get("trades_today", 0)
 

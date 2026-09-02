@@ -15,6 +15,7 @@ def test_daily_trade_limit_blocks_sixth_trade(tmp_path, monkeypatch):
         "position": None,
         "trades_today": 4,
         "daily_loss": 0.00,
+        "last_reset": datetime.now().strftime("%Y-%m-%d"),
     }
 
     account_path.write_text(json.dumps(account))
@@ -201,6 +202,7 @@ def test_record_trade_updates_trade_count_and_timestamp(tmp_path, monkeypatch):
         "position": None,
         "trades_today": 2,
         "daily_loss": 0.00,
+        "last_reset": datetime.now().strftime("%Y-%m-%d"),
     }
 
     account_path.write_text(json.dumps(account))
@@ -1267,3 +1269,46 @@ def test_record_trade_blocks_at_limit_without_changing_trade_results(
     assert final_account["trades"] == 5
     assert final_account["wins"] == 5
     assert final_account["losses"] == 0
+
+def test_record_trade_resets_daily_stats_on_new_day(
+    tmp_path, monkeypatch
+):
+
+    account_path = tmp_path / "account.json"
+
+    yesterday = (
+        datetime.now() - timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 5,
+        "wins": 5,
+        "losses": 0,
+        "total_profit": 5.00,
+        "position": None,
+        "trades_today": 5,
+        "daily_loss": 5.00,
+        "last_reset": yesterday,
+        "last_trade_time": (
+            datetime.now() - timedelta(minutes=31)
+        ).isoformat(),
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+
+    assert recorded is True
+
+    final_account = json.loads(account_path.read_text())
+
+    assert final_account["trades_today"] == 1
+    assert final_account["daily_loss"] == 0
+    assert final_account["last_reset"] == (
+        datetime.now().strftime("%Y-%m-%d")
+    )
