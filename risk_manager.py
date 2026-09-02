@@ -80,7 +80,8 @@ def record_trade():
     if current_trades >= MAX_DAILY_TRADES:
         print("🚫 Daily trade limit reached")
         return False
-
+    
+    account["trades"] = account.get("trades", 0) + 1
     account["trades_today"] = current_trades + 1
     account["last_trade_time"] = datetime.now().isoformat()
 

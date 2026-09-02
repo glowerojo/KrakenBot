@@ -570,7 +570,7 @@ def test_record_trade_preserves_account_values(tmp_path, monkeypatch):
     final_account = json.loads(account_path.read_text())
 
     assert final_account["balance"] == 97.50
-    assert final_account["trades"] == 7
+    assert final_account["trades"] == 8
     assert final_account["wins"] == 6
     assert final_account["losses"] == 1
     assert final_account["total_profit"] == 2.50
@@ -1351,3 +1351,36 @@ def test_new_day_reset_clears_last_trade_time(tmp_path, monkeypatch):
         datetime.now().strftime("%Y-%m-%d")
     )
     assert reset_account["last_trade_time"] == account["last_trade_time"]
+
+
+def test_record_trade_increments_total_trade_count(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 7,
+        "wins": 6,
+        "losses": 1,
+        "total_profit": 5.00,
+        "position": None,
+        "trades_today": 2,
+        "daily_loss": 0.00,
+        "last_reset": today,
+        "last_trade_time": None,
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+
+    final_account = json.loads(account_path.read_text())
+
+    assert recorded is True
+    assert final_account["trades"] == 8
