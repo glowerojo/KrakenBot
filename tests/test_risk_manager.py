@@ -1384,3 +1384,32 @@ def test_record_trade_increments_total_trade_count(tmp_path, monkeypatch):
 
     assert recorded is True
     assert final_account["trades"] == 8
+
+def test_record_trade_updates_last_trade_time(tmp_path, monkeypatch):
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 7,
+        "wins": 6,
+        "losses": 1,
+        "total_profit": 5.00,
+        "position": None,
+        "trades_today": 2,
+        "daily_loss": 0.00,
+        "last_reset": today,
+        "last_trade_time": None,
+    }
+
+    account_path.write_text(json.dumps(account))
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+    final_account = json.loads(account_path.read_text())
+
+    assert recorded is True
+    assert final_account["last_trade_time"] is not None
