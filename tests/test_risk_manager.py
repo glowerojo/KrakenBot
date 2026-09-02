@@ -1312,3 +1312,42 @@ def test_record_trade_resets_daily_stats_on_new_day(
     assert final_account["last_reset"] == (
         datetime.now().strftime("%Y-%m-%d")
     )
+
+
+def test_new_day_reset_clears_last_trade_time(tmp_path, monkeypatch):
+
+    account_path = tmp_path / "account.json"
+
+    yesterday = (
+        datetime.now() - timedelta(days=1)
+    ).strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 5,
+        "wins": 5,
+        "losses": 0,
+        "total_profit": 5.00,
+        "position": None,
+        "trades_today": 5,
+        "daily_loss": 5.00,
+        "last_reset": yesterday,
+        "last_trade_time": (
+            datetime.now() - timedelta(days=1)
+        ).isoformat(),
+    }
+
+    account_path.write_text(json.dumps(account))
+
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    reset_account = risk_manager.reset_daily_stats(account)
+
+    assert reset_account["trades_today"] == 0
+    assert reset_account["daily_loss"] == 0
+    assert reset_account["last_reset"] == (
+        datetime.now().strftime("%Y-%m-%d")
+    )
+    assert reset_account["last_trade_time"] == account["last_trade_time"]
