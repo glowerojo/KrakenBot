@@ -1,7 +1,6 @@
 import json
 from datetime import datetime, timedelta
 
-
 MAX_DAILY_LOSS = 5.00
 MAX_DAILY_TRADES = 5
 COOLDOWN_MINUTES = 30
@@ -38,16 +37,12 @@ def save_account(account):
 
 
 def can_trade():
-
     account = reset_daily_stats(load_account())
-
-
 
     # Daily trade limit
     if account.get("trades_today", 0) >= MAX_DAILY_TRADES:
         print("🚫 Daily trade limit reached")
         return False
-
 
     # Daily loss limit
     if account.get("daily_loss", 0) >= MAX_DAILY_LOSS:
@@ -57,13 +52,9 @@ def can_trade():
 
     # Cooldown check
     last_trade = account.get("last_trade_time", "")
-
     if last_trade:
-
         last_time = datetime.fromisoformat(last_trade)
-
         if datetime.now() < last_time + timedelta(minutes=COOLDOWN_MINUTES):
-
             print("⏳ Cooldown active")
             return False
 
@@ -80,9 +71,15 @@ def record_trade():
     if current_trades >= MAX_DAILY_TRADES:
         print("🚫 Daily trade limit reached")
         return False
-    
+
+    if account.get("daily_loss", 0) >= MAX_DAILY_LOSS:
+        print("🚫 Daily loss limit reached")
+        return False
+
     account["trades"] = account.get("trades", 0) + 1
+
     account["trades_today"] = current_trades + 1
+
     account["last_trade_time"] = datetime.now().isoformat()
 
     save_account(account)

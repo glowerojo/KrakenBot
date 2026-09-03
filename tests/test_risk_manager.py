@@ -1,5 +1,11 @@
 import json
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+import risk_manager
 
 
 def test_daily_trade_limit_blocks_sixth_trade(tmp_path, monkeypatch):
@@ -21,8 +27,6 @@ def test_daily_trade_limit_blocks_sixth_trade(tmp_path, monkeypatch):
     account_path.write_text(json.dumps(account))
 
     monkeypatch.chdir(tmp_path)
-
-    import risk_manager
 
     fifth_trade = risk_manager.record_trade()
     sixth_trade = risk_manager.record_trade()
@@ -1474,3 +1478,35 @@ def test_record_trade_at_daily_limit_preserves_last_trade_time(tmp_path, monkeyp
 
     assert recorded is False
     assert final_account["last_trade_time"] == previous_trade_time
+
+
+def test_record_trade_at_daily_loss_limit_does_not_increment_total_trades(
+    tmp_path, monkeypatch
+):
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 95.00,
+        "trades": 7,
+        "wins": 6,
+        "losses": 1,
+        "total_profit": 5.00,
+        "position": None,
+        "trades_today": 4,
+        "daily_loss": 5.00,
+        "last_reset": today,
+        "last_trade_time": None,
+    }
+
+    account_path.write_text(json.dumps(account))
+    monkeypatch.chdir(tmp_path)
+
+    import risk_manager
+
+    recorded = risk_manager.record_trade()
+    final_account = json.loads(account_path.read_text())
+
+    assert recorded is False
+    assert final_account["trades"] == 7
