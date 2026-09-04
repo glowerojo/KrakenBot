@@ -1566,3 +1566,29 @@ def test_record_trade_preserves_daily_loss_below_limit(tmp_path, monkeypatch):
 
     assert recorded is True
     assert final_account["daily_loss"] == 4.99
+
+def test_record_trade_creates_total_trades_when_missing(tmp_path, monkeypatch):
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "trades_today": 0,
+        "daily_loss": 0.00,
+        "last_reset": today,
+        "last_trade_time": None,
+    }
+
+    account_path.write_text(json.dumps(account))
+    monkeypatch.chdir(tmp_path)
+
+    recorded = risk_manager.record_trade()
+    final_account = json.loads(account_path.read_text())
+
+    assert recorded is True
+    assert final_account["trades"] == 1
