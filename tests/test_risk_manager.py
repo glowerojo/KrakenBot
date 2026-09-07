@@ -1619,3 +1619,30 @@ def test_record_trade_creates_trades_today_when_missing(tmp_path, monkeypatch):
 
     assert recorded is True
     assert final_account["trades_today"] == 1
+
+
+def test_record_trade_creates_last_trade_time_when_missing(tmp_path, monkeypatch):
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 10,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "trades_today": 0,
+        "daily_loss": 0.00,
+        "last_reset": today,
+    }
+
+    account_path.write_text(json.dumps(account))
+    monkeypatch.chdir(tmp_path)
+
+    recorded = risk_manager.record_trade()
+    final_account = json.loads(account_path.read_text())
+
+    assert recorded is True
+    assert "last_trade_time" in final_account
