@@ -1674,3 +1674,31 @@ def test_record_trade_allows_missing_daily_loss_without_creating_field(
 
     assert recorded is True
     assert "daily_loss" not in final_account
+
+def test_record_trade_resets_missing_last_reset(tmp_path, monkeypatch):
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    account = {
+        "balance": 100.00,
+        "trades": 10,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "trades_today": 4,
+        "daily_loss": 3.00,
+        "last_trade_time": None,
+    }
+
+    account_path.write_text(json.dumps(account))
+    monkeypatch.chdir(tmp_path)
+
+    recorded = risk_manager.record_trade()
+    final_account = json.loads(account_path.read_text())
+
+    assert recorded is True
+    assert final_account["trades_today"] == 1
+    assert final_account["daily_loss"] == 0
+    assert final_account["last_reset"] == today
