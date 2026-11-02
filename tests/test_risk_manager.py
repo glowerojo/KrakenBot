@@ -1926,3 +1926,31 @@ def test_record_trade_blocks_when_both_daily_limits_are_reached(
     assert recorded is False
     assert final_account["trades_today"] == 5
     assert final_account["daily_loss"] == 5.00
+
+def test_can_trade_allows_trade_when_cooldown_expires_exactly(
+    tmp_path, monkeypatch
+):
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    last_trade = datetime.now() - timedelta(minutes=30)
+
+    account = {
+        "balance": 100.00,
+        "trades": 10,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "trades_today": 0,
+        "daily_loss": 0.00,
+        "last_reset": today,
+        "last_trade_time": last_trade.isoformat(),
+    }
+
+    account_path.write_text(json.dumps(account))
+    monkeypatch.chdir(tmp_path)
+
+    allowed = risk_manager.can_trade()
+
+    assert allowed is True
