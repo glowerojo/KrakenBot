@@ -49,18 +49,20 @@ def can_trade():
         print("🚫 Daily loss limit reached")
         return False
 
-
     # Cooldown check
     last_trade = account.get("last_trade_time", "")
     if last_trade:
-        last_time = datetime.fromisoformat(last_trade)
+        try:
+            last_time = datetime.fromisoformat(last_trade)
+        except (ValueError, TypeError):
+            print("🚫 Invalid last trade timestamp. Trading blocked.")
+            return False
+
         if datetime.now() < last_time + timedelta(minutes=COOLDOWN_MINUTES):
             print("⏳ Cooldown active")
             return False
 
-
     return True
-
 
 def record_trade():
 

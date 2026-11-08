@@ -2091,7 +2091,7 @@ def test_can_trade_allows_trade_when_last_trade_time_is_missing(
 
     assert allowed is True
 
-def test_can_trade_raises_error_when_last_trade_time_is_invalid(
+def test_can_trade_blocks_when_last_trade_time_is_invalid(
     tmp_path, monkeypatch
 ):
     account_path = tmp_path / "account.json"
@@ -2114,9 +2114,6 @@ def test_can_trade_raises_error_when_last_trade_time_is_invalid(
     account_path.write_text(json.dumps(account))
     monkeypatch.chdir(tmp_path)
 
-    try:
-        risk_manager.can_trade()
-    except ValueError:
-        pass
-    else:
-        assert False, "Expected ValueError for invalid timestamp"
+    allowed = risk_manager.can_trade()
+
+    assert allowed is False
