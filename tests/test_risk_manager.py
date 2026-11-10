@@ -2117,3 +2117,34 @@ def test_can_trade_blocks_when_last_trade_time_is_invalid(
     allowed = risk_manager.can_trade()
 
     assert allowed is False
+
+def test_can_trade_handles_timezone_aware_timestamp(
+    tmp_path, monkeypatch
+):
+    from datetime import datetime, timedelta, timezone
+
+    account_path = tmp_path / "account.json"
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    recent_trade = datetime.now(timezone.utc).isoformat()
+
+    account = {
+        "balance": 100.00,
+        "trades": 10,
+        "wins": 0,
+        "losses": 0,
+        "total_profit": 0.00,
+        "position": None,
+        "trades_today": 0,
+        "daily_loss": 0.00,
+        "last_reset": today,
+        "last_trade_time": recent_trade,
+    }
+
+    account_path.write_text(json.dumps(account))
+    monkeypatch.chdir(tmp_path)
+
+    allowed = risk_manager.can_trade()
+
+    assert allowed is False

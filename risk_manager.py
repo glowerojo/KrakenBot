@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 MAX_DAILY_LOSS = 5.00
 MAX_DAILY_TRADES = 5
@@ -58,7 +58,11 @@ def can_trade():
             print("🚫 Invalid last trade timestamp. Trading blocked.")
             return False
 
-        if datetime.now() < last_time + timedelta(minutes=COOLDOWN_MINUTES):
+               # Normalize timestamps to local timezone before comparison
+        last_time = last_time.astimezone()
+        now = datetime.now().astimezone()
+
+        if now < last_time + timedelta(minutes=COOLDOWN_MINUTES):
             print("⏳ Cooldown active")
             return False
 
